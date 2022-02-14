@@ -5,4 +5,19 @@
 //
 //
 
+// == Include Block =============================================================================== Include Block
+#include <stdio.h>
+#include <string.h>
+// ================================================================================================ Include Block
+
+
+/********************************************************************/
+/* Struct Vector3 creates a 3d vector.  Each of the three           */
+/* components are double precision.                                 */                  
+/********************************************************************/
+typedef struct Vectors {
+    double x;
+    double y;
+    double z;
+} vector3;
 
