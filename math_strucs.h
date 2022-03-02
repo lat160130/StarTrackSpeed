@@ -20,4 +20,5 @@ typedef struct Vectors {
     double y;
     double z;
 } vector3;
+// struct Vectors is the same as vector3
 
