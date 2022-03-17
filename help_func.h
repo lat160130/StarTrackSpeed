@@ -10,7 +10,7 @@
 // == Include Block =============================================================================== ⋁ Include Block
 #include <stdio.h>
 #include <string.h>
-#include "math_strucs.h"
+// #include "math_strucs.h"
 // ================================================================================================ ⋀ Include Block
 
 // == Constants =================================================================================== ⋁ Constants
@@ -26,7 +26,7 @@
 
 
 // == 1. importSunAndMagVecs ====================================================================== ⋁ 1. importSunAndMagVecs
-int importSunAndMagVecs(char *vectorTxtFile, vector3 sunBody, vector3 sunIne, vector3 magBody, vector3 magIne){
+int importSunAndMagVecs(char *vectorTxtFile, vector3 *sunBody, vector3 *sunIne, vector3 *magBody, vector3 *magIne){
     FILE *fpSunMagVecs;
     double sunMagMat[NUMVECS][DIMS];
 
@@ -46,30 +46,30 @@ int importSunAndMagVecs(char *vectorTxtFile, vector3 sunBody, vector3 sunIne, ve
     // ===================================================================
 
     // Create sunBody vector
-    sunBody.x = sunMagMat[0][0]; 
-    sunBody.y = sunMagMat[0][1];
-    sunBody.z = sunMagMat[0][2];
+    sunBody->x = sunMagMat[0][0]; 
+    sunBody->y = sunMagMat[0][1];
+    sunBody->z = sunMagMat[0][2];
 
     // Create sunIne vector
-    sunIne.x = sunMagMat[1][0]; 
-    sunIne.y = sunMagMat[1][1];
-    sunIne.z = sunMagMat[1][2];
+    sunIne->x = sunMagMat[1][0]; 
+    sunIne->y = sunMagMat[1][1];
+    sunIne->z = sunMagMat[1][2];
 
     // Create magBody vector
-    magBody.x = sunMagMat[2][0]; 
-    magBody.y = sunMagMat[2][1];
-    magBody.z = sunMagMat[2][2];
+    magBody->x = sunMagMat[2][0]; 
+    magBody->y = sunMagMat[2][1];
+    magBody->z = sunMagMat[2][2];
 
     // Create magIne vector
-    magIne.x = sunMagMat[3][0]; 
-    magIne.y = sunMagMat[3][1];
-    magIne.z = sunMagMat[3][2];
+    magIne->x = sunMagMat[3][0]; 
+    magIne->y = sunMagMat[3][1];
+    magIne->z = sunMagMat[3][2];
 
  
     
-    float a = sunMagMat[0][0];
+    /* float a = sunMagMat[0][0];
     sunBody.x = a;
-
+ */
     return 0;
 } // importSunAndMagVecs(char *vectorTxtFile){
 

@@ -15,19 +15,19 @@
 #include "math_strucs.h"
 
 // Prototype list
-vector3 xProd(vector3 V1, vector3 V2);
+// vector3 xProd(vector3 V1, vector3 V2);
 
 
 /********************************************************************/
 /* Function XProd returns the cross products of two vectors.        */
 /* The input vectors and the resultant vector are all in 3d.        */
 /********************************************************************/
-vector3 XProd(vector3 V1, vector3 V2) {
+/* vector3 XProd(vector3 V1, vector3 V2) {
   vector3 V3;
   V3.x = V1.y*V2.z - V2.y*V1.z;
   V3.y = V2.x*V1.z - V1.x*V2.z;
   V3.z = V1.x*V2.y - V2.x*V1.y;
  
   return V3;
-} /* Function XProd */
+} /* Function XProd  */
  
