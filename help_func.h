@@ -67,9 +67,7 @@ int importSunAndMagVecs(char *vectorTxtFile, vector3 *sunBody, vector3 *sunIne, 
 
  
     
-    /* float a = sunMagMat[0][0];
-    sunBody.x = a;
- */
+
     return 0;
 } // importSunAndMagVecs(char *vectorTxtFile){
 
@@ -77,9 +75,27 @@ int importSunAndMagVecs(char *vectorTxtFile, vector3 *sunBody, vector3 *sunIne, 
 // ================================================================================================ ⋀ 1. importSunAndMagVecs
 
 // == 2. printVecVals ============================================================================= ⋁ 2. printVecVals
+// This function will print out the x y z components of the input vector.
 void printVecVals(vector3 inVector){
 printf("vec.x = %lf,\t vec.y = %lf,\t vec.z = %lf\n", inVector.x, inVector.y, inVector.z);
 return;
 } // void printVecVals(vector3 inVector){
 // ================================================================================================ ⋀ 2. printVecVals
 
+// == 3. Print Matrix ============================================================================= Print Matrix
+// Print out a matrix of any size in the appropriate shape.
+void printMatrix(int rows, int cols, double *matrix){
+
+    printf("*matrix = %g\n\n", *matrix);
+    printf("(*matrix +1 )= %g\n\n", *(matrix + 1));
+    printf("")
+
+    for(int i = 0; i < rows; i++){
+        for (int j = 0; i < cols; j++){
+            printf("%g\t", *((matrix+i*cols) + j - 2));
+        } // for - j - cols
+        printf("\n");
+    } // for - i - rows
+
+} // 
+// ================================================================================================ Print Matrix
