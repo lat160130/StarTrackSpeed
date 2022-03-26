@@ -16,12 +16,15 @@
 // == List of Functions =========================================================================== ⋁ List of functions
 // 1. void XProd(vector3 V1, vector3 V2, vector3 *V3)
 // 2. double norm3L2(vector3 v1)
+// 3. double dot3(double x, double y, double z, double i, double j, double k)
+// 4. double standDevN
 // ================================================================================================ ⋀ Include Block
 
 
 // Prototype list
-// vector3 xProd(vector3 V1, vector3 V2);
-
+vector3 xProd(vector3 V1, vector3 V2);
+double norm3L2(vector3 V1);
+double dot3(double x, double y, double z, double i, double j, double k);
 
 /********************************************************************/
 /* Function XProd returns the cross products of two vectors.        */
@@ -50,7 +53,20 @@ double norm3L2(vector3 V1){
 
 // == 3. dot3 ===================================================================================== ⋁ dot3
 double dot3(double x, double y, double z, double i, double j, double k){
-return ((x*i) + (y*j) + (z*k));
+  double out = (x*i) + (y*j) + (z*k);
+return out;
 
 } // Function dot3
 // ================================================================================================ ⋀ dot3
+
+// == 4. standDevN ================================================================================ ⋁ standDevN
+double standDevN(double *array, int arrLen){
+  
+} // Function standDevN
+// ================================================================================================ ⋀ standDevN
+
+// == 4. rot2Quat ================================================================================= ⋁ rot2Quat
+//void (double *matrix, quat q){
+
+//} // Function rot2Quat
+// ================================================================================================ ⋀ rot2Quat

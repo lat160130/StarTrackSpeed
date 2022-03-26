@@ -22,3 +22,17 @@ typedef struct Vectors {
 } vector3;
 // struct Vectors is the same as vector3
 
+
+/********************************************************************/
+/* Struct Quaternion creates a 4 component quaternion.  Each of the */
+/* four components are double precision.                            */                  
+/********************************************************************/
+// Similarly to MATLAB this code is scalar first.
+// Quaternion q = s + xi + yj + zk;
+typedef struct Quaternion{
+    double s; // s for scalar
+    double x;
+    double y;
+    double z;
+} quat;
+

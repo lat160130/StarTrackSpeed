@@ -82,20 +82,22 @@ return;
 } // void printVecVals(vector3 inVector){
 // ================================================================================================ ⋀ 2. printVecVals
 
+
+
+// == NON FUNCTIONAL SO FAR ========================================================================================= #
 // == 3. Print Matrix ============================================================================= Print Matrix
 // Print out a matrix of any size in the appropriate shape.
-void printMatrix(int rows, int cols, double *matrix){
-
-    printf("*matrix = %g\n\n", *matrix);
-    printf("(*matrix +1 )= %g\n\n", *(matrix + 1));
-    printf("")
+/*
+void printMatrix(int rows, int cols, double &matrix){
 
     for(int i = 0; i < rows; i++){
-        for (int j = 0; i < cols; j++){
-            printf("%g\t", *((matrix+i*cols) + j - 2));
+        for(int j = 0; j < cols; j++){
+            printf("%g\t", *matrix + cols*i + j);
         } // for - j - cols
         printf("\n");
     } // for - i - rows
 
-} // 
+} // printMatrix 
+*/
 // ================================================================================================ Print Matrix
+// =================================================================================================================== #
