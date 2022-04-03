@@ -10,3 +10,4 @@ q = QUEST_mat(b, r, n);
 a_i = 1/n;
 
 test = b(1,:)' * r(1,:)
+test = a_i*test;

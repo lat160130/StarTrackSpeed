@@ -46,6 +46,8 @@ int returnCodeImport = -1;
 
 returnCodeImport = importSunAndMagVecs(vecIn, &sunBody, &sunIne, &magBody, &magIne);
 
+// == Quest Algorithm ============================================================================= QUEST Algorithm
+// ================================================================================================ QUEST Algorithm
 
 
 } // int main()
