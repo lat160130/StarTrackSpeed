@@ -24,9 +24,15 @@ function [q] = QUEST_mat(obsMat, refMat, n)
 
     end % 
     
-    sig = trace(B);
+    
     S = B + B';
+    
+    
 
-    K = [`]
+
+    sig2  = .5*trace(S);
+    kappa = trace(adjoint(S));
+
+    q=1;
 
 end
