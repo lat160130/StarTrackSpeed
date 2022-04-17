@@ -22,29 +22,24 @@
 // == Main Function =============================================================================== ⋁ Main Function
 int main(){
 
-vector3 sunBody, sunIne, magBody, magIne, t2b, t2i, t3b, t3i, test;
-double normCross = 0;
-sunBody.x = 0;
-sunBody.y = 0;
-sunBody.z = 0;
+// Declare the constants
+const char txtMatObs[] = "vectorInObs.txt";
+const char txtMatRef[] = "vectorInRef.txt";
 
-sunIne.x = 0;
-sunIne.y = 0;
-sunIne.z = 0;
+FILE *fpMatObs = fopen(txtMatObs, "r");
+FILE *fpMatRef = fopen(txtMatRef, "r");
 
-magBody.x = 0;
-magBody.y = 0;
-magBody.z = 0;
-
-magIne.x = 0;
-magIne.y = 0;
-magIne.z = 0;
+// Check if either text file failed to open
+if ((fpMatObs == NULL) || (fpMatRef == NULL)){
+    perror("Text file opening failed: vectorInObs.txt or vectorInRef.txt failed to open.");
+    return 1;
+} // if
 
 
-char vecIn[] = "vectorInput.txt";
-int returnCodeImport = -1;
 
-returnCodeImport = importSunAndMagVecs(vecIn, &sunBody, &sunIne, &magBody, &magIne);
+
+// Read in the two vector table inputs
+
 
 // == Quest Algorithm ============================================================================= QUEST Algorithm
 // ================================================================================================ QUEST Algorithm

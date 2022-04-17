@@ -44,7 +44,7 @@ magIne.y = 0;
 magIne.z = 0;
 
 
-char vecIn[] = "vectorInput.txt";
+const char vecIn[] = "vectorInput.txt";
 int returnCodeImport = -1;
 
 returnCodeImport = importSunAndMagVecs(vecIn, &sunBody, &sunIne, &magBody, &magIne);

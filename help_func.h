@@ -22,6 +22,7 @@
 // == List of Functions =========================================================================== ⋁ List of functions
 // 1. importSunAndMagVecs(char *vectorTxtFile, vector3 sunBody, vector3 sunIne, vector3 magBody, vector3 magIne)
 // 2. printVecVals(vector3 inVector)
+// 3. numOfLines(FILE *txtFile)
 // ================================================================================================ ⋀ Include Block
 
 
@@ -82,6 +83,30 @@ return;
 } // void printVecVals(vector3 inVector){
 // ================================================================================================ ⋀ 2. printVecVals
 
+// == numOfLines ================================================================================== ⋁ 3. numOfLines
+// This function will return the number of rows in the text file that way we can count the number of
+// input vectors QUEST will be handling.
+// Make sure the file was properly opened before handling.
+int numOfLines(FILE *txtFile){
+    int fc, count;
+    count = 0;
+
+    // iterator to go through number of lines
+    for (;;){
+        fc = fgetc(txtFile);
+        if (fc = EOF)
+            break; // reached the end of file leave the for loop;
+
+        if (fc == '\n')
+            ++count; // end of line, counter increases by 1;
+
+
+    } // for (;;)
+    rewind(txtFile);
+
+    return count++;
+} // int numOfLines
+// ================================================================================================ ⋀ 3. numOfLines
 
 
 // == NON FUNCTIONAL SO FAR ========================================================================================= #
