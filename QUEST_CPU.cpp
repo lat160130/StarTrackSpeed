@@ -11,6 +11,8 @@
 //        GB- Gravity vector  in navigation frame [3x1]
 //        MN- Magnetic vector in navigation frame [3x1]
 
+// GENERAL COMMENTS:
+// ALL MATRICES ARE IN ROW MAJOR FORM.
 
 // == Import Header File Block ==================================================================== ⋁ Import Header File Block
 #include <stdio.h>
@@ -30,7 +32,7 @@ using namespace std;
 // ================================================================================================ ⋀ Preprocessor Directives
 
 // == Internal Program Function Prototypes ======================================================== ⋁ Function Prototypes
-void printMat(double *mat[3], int r, int col, char name[]);
+void printMat(double *mat, int r, int col, string name);
 // ================================================================================================ ⋀ Function Prototypes
 
 
@@ -45,6 +47,7 @@ const char txtMatObs[] = "vectorInObs.txt";
 const char txtMatRef[] = "vectorInRef.txt";
 int x,y;
 
+
 ifstream fpMatObs(txtMatObs);
 ifstream fpMatRef(txtMatRef);
 
@@ -55,20 +58,21 @@ if ((!fpMatObs) || (!fpMatRef)){
 } // end if
 
 // Declare storage matrices
-double **matObs = new double*[rows];
-double **matRef = new double*[rows];
-for(x = 0; x < rows; x++){
-    matObs[x] = new double[NUMDIM];
-    matRef[x] = new double[NUMDIM];
-} // end for x
+double *matObs = (double*) malloc(rows*NUMDIM * sizeof(double));
+double *matRef = (double*) malloc(rows*NUMDIM * sizeof(double));
 
-// READ IN TEXT FILE CONTENT
-for (x = 0; x < rows; x++) {
-    for (y = 0; y < NUMDIM; y++) {
-        fpMatObs >> matObs[x][y];
-        fpMatRef >> matRef[x][y];
-    } // end for x
-} // end for y
+cout << "readin data" << endl;
+for (x = 0; x < rows*NUMDIM; x++){
+
+    fpMatObs >> matObs[x];
+    fpMatRef >> matRef[x];
+} // end for x
+cout << "read data" << endl;
+
+for (x = 0; x < rows*NUMDIM; x++)
+    cout << matObs[x] << endl;
+
+
 
 
 // == Quest Algorithm ============================================================================= ⋁ QUEST Algorithm
@@ -76,37 +80,66 @@ for (x = 0; x < rows; x++) {
 double a_i = 1/rows;
 
 // CREATE S
-double sMAT[NUMDIM][NUMDIM];
+
+double B[NUMDIM][NUMDIM];
 for (x = 0; x < NUMDIM; x++){
     for (y = 0; y < NUMDIM; y++){
-        sMAT[x][y] = dotN(matObs[x], matRef[y], rows);
+        for(int z = 0; z < )
+        B[x][y] = mat[x*c+y]
     } // end for y
 } // end for x
 
-printMat(*sMAT, NUMDIM, NUMDIM, "sMAT");
+
 
 
 // ================================================================================================ ⋀ QUEST Algorithm
 
 // FREE Dynamically allocated memory.
+/*
 for (x = 0; x < rows; x++){
     delete[] matObs[x];
     delete[] matRef[x];
 } // end for x
-delete[] matObs;
-delete[] matRef;
+*/
+free(matObs);
+free(matRef);
 
 } // int main()
 // ================================================================================================ ⋀ Main Function
 
 // == FUNCTIONS =================================================================================== ⋁ FUNCTIONS
-void printMat(double **mat, int r, int c, string name){
+// == 1. printMat
+void printMat(double *mat, int r, int c, string name){
     cout << name << endl;
     for (int x = 0; x < r; x++) {
         for (int y = 0; y < c; y++) {
-            printf("(%d,%d) = %lf\t", x,y, mat[x][y]);
-        } // end for x
+            printf("(%d,%d) = %lf\t", x,y, mat[x*c+y]);
+        } // end for y
         cout << endl;
-    } // end for y
+    } // end for x
 } // void printMat
 // ================================================================================================ ⋀ FUNCTIONS  
+
+// == 2. matMult 
+double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, string name){
+    cout << name << endl;
+
+    if (cA != rB){
+        perror("ERROR, matrix dimension error.  Columns of A != Rows of B.\n");
+        return -2;
+    } // if (cA != rB)
+
+
+    for (int x = 0; x < cA; x++) {
+        for (int y = 0; y < rB; y++) {
+            
+            for (int k = 0; k < rB; k++){
+                
+            } // end for k
+        } // end for y
+        cout << endl;
+    } // end for x
+    return 
+} // void printMat
+// ================================================================================================ ⋀ FUNCTIONS  
+
