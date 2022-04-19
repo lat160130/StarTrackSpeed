@@ -25,10 +25,10 @@ b3 = readmatrix('vectorInRef.txt');
 % end % 
 
 disp(a3'*b3);
-
-a3 = a3(1:3,:);
-b3 = b3(1:3,:);
-disp(a3'*b3);
+B = a3'*b3;
+% a3 = a3(1:3,:);
+% b3 = b3(1:3,:);
+% disp(a3'*b3);
 
 a2 = a3(1:2,:);
 b2 = b3(1:2,:);

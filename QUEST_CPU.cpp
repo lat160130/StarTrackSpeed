@@ -32,8 +32,10 @@ using namespace std;
 // ================================================================================================ ⋀ Preprocessor Directives
 
 // == Internal Program Function Prototypes ======================================================== ⋁ Function Prototypes
-void printMat(double *mat, int r, int col, string name);
+void printMatHeap (double *mat, int r, int col, string name);
+//void printMatStack (double mat[][], int r, int c, string name);
 double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, string name);
+
 // ================================================================================================ ⋀ Function Prototypes
 
 
@@ -46,7 +48,7 @@ int rows = atoi(argv[1]);  // The number of vectors coming in
 // Declare the constants
 const char txtMatObs[] = "vectorInObs.txt";
 const char txtMatRef[] = "vectorInRef.txt";
-int x,y;
+int i, j;
 
 
 ifstream fpMatObs(txtMatObs);
@@ -63,10 +65,10 @@ double *matObs = (double*) malloc(rows*NUMDIM * sizeof(double));
 double *matRef = (double*) malloc(rows*NUMDIM * sizeof(double));
 
 cout << "readin data" << endl;
-for (x = 0; x < rows*NUMDIM; x++){
+for (i = 0; i < rows*NUMDIM; i++){
 
-    fpMatObs >> matObs[x];
-    fpMatRef >> matRef[x];
+    fpMatObs >> matObs[i];
+    fpMatRef >> matRef[i];
 } // end for x
 cout << "read data" << endl;
 
@@ -75,16 +77,19 @@ cout << "read data" << endl;
 // (1,0) (1,1) (1, 2)
 
 // is REALLY LIKE THIS IN MEMORY (x,y)
-// (0,0) (0,1) (0, 2) (1,0) (1,1) (1, 2)
-// to iterate as rows: mat[x*c+y]
+// (0,0) (0,1) (0,2) (1,0) (1,1) (1,2)
+//   0     1     2     3     4     5 
+// to access as rows: mat[x*c+y]
 // where x is the row iter and y is column iter, 
 // and c is the number of columns in the matrix
 
-// to unlock as column vectors: mat[y*r+x]
+// to access as column vectors: mat[x*c+y]
+// access pattern
 
 
-printMat(matObs, rows, NUMDIM, "MAT OBS");
-printMat(matRef, rows, NUMDIM, "MAT REF");
+
+// printMatHeap(matObs, rows, NUMDIM, "MAT OBS");
+// printMatHeap(matRef, rows, NUMDIM, "MAT REF");
 
 
 
@@ -94,44 +99,47 @@ printMat(matRef, rows, NUMDIM, "MAT REF");
 double a_i = 1/rows;
 
 
-// matObs is read in as a 2x3, matRef is transposed, -->
 // CREATE B
-
-double B[NUMDIM][NUMDIM];
+// double B[NUMDIM][NUMDIM];
+double *B = (double*) malloc(NUMDIM*NUMDIM * sizeof(double));
 double sum = 0;
-    for (int x = 0; x < rows; x++) { // since this is transpose --> columns of A become rows
-        for (int y = 0; y < rows; y++) {
-            for (int k = 0; k < rows; k++){
-                cout << matObs[k*rows+x] << " "<< matRef[k*rows+y] << "\t";
-            } // end for k
-            B[x][y] = 0;
-            cout << "end element" << endl;
-        } // end for y
-        cout << endl << endl;
-    } // end for x
 
-for (int i = 0; i < NUMDIM; i++){
-    for (int j = 0; j < NUMDIM; j++){
-        cout << B[i][j] << " ";
+for(int i=0; i<NUMDIM; ++i){ // rows of the first matrix === 
+    for(int j=0; j<NUMDIM; ++j){ // columns of the 2nd matrix
+        for(int k=0; k<rows; ++k) {
+            sum += matObs[k*NUMDIM+i] * matRef[k*NUMDIM+j];
+        } // end for k
+        B[i*NUMDIM + j]= sum;
+        sum = 0;
+    } // end for j
+} // end for i
+
+// double S[NUMDIM][NUMDIM];
+double *S = (double*) malloc(NUMDIM*NUMDIM * sizeof(double));
+// Create S
+for (i = 0; i < NUMDIM; i++){
+    for (j = 0; j < NUMDIM; j++){
+        S[i*NUMDIM + j] = B[i*NUMDIM + j] + B[j*NUMDIM + i];
+    } // end for j
+} // end for i
+// PRINT OUT S
+printMatHeap(S, NUMDIM, NUMDIM, "S = B + B'");
+
+
+/*
+for (i = 0; i < NUMDIM; i++){
+    for (j = 0; j < NUMDIM; j++){
+        cout << S[i][j] << " ";
     } // end for j
     cout << endl;
 } // end for i
-
-// printMat(B, NUMDIM,NUMDIM, "B Mat");
-
-
+*/
 
 
 
 // ================================================================================================ ⋀ QUEST Algorithm
 
 // FREE Dynamically allocated memory.
-/*
-for (x = 0; x < rows; x++){
-    delete[] matObs[x];
-    delete[] matRef[x];
-} // end for x
-*/
 free(matObs);
 free(matRef);
 
@@ -139,8 +147,8 @@ free(matRef);
 // ================================================================================================ ⋀ Main Function
 
 // == FUNCTIONS =================================================================================== ⋁ FUNCTIONS
-// == 1. printMat
-void printMat(double *mat, int r, int c, string name){
+// == 1. printMat ================================================================================= ⋁ printMatHeap
+void printMatHeap(double *mat, int r, int c, string name){
     cout << name << endl;
     for (int x = 0; x < r; x++) {
         for (int y = 0; y < c; y++) {
@@ -149,7 +157,7 @@ void printMat(double *mat, int r, int c, string name){
         cout << endl;
     } // end for x
 } // void printMat
-// ================================================================================================ ⋀ FUNCTIONS  
+// ================================================================================================ ⋀ printMatHeap
 
 // == 2. matMult 
 double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, string name){
@@ -177,3 +185,18 @@ double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, stri
 } // void printMat
 // ================================================================================================ ⋀ FUNCTIONS  
 
+
+
+/*
+void printMatStack (double mat[][], int r, int c, string name){
+    cout << name << endl;
+    for (int x = 0; x < r; x++) {
+        for (int y = 0; y < c; y++) {
+            printf("(%d,%d) = %lf\t", x,y, mat[x][y]);
+        } // end for y
+        cout << endl;
+    } // end for x
+
+} // 
+
+*/
