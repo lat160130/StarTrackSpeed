@@ -83,7 +83,7 @@ return;
 } // void printVecVals(vector3 inVector){
 // ================================================================================================ ⋀ 2. printVecVals
 
-// == numOfLines ================================================================================== ⋁ 3. numOfLines
+// == 3. numOfLines =============================================================================== ⋁ 3. numOfLines
 // This function will return the number of rows in the text file that way we can count the number of
 // input vectors QUEST will be handling.
 // Make sure the file was properly opened before handling.
@@ -126,3 +126,36 @@ void printMatrix(int rows, int cols, double &matrix){
 */
 // ================================================================================================ Print Matrix
 // =================================================================================================================== #
+
+/*
+// == 4. importMatrix ============================================================================= ⋁ 4. importMatrix
+double **importMatrix(fileName, r, c){
+    // numVectors = r;
+    // NUMDIMS = c;
+
+    // iterators
+    int i;
+    int j;
+
+    double** mat=malloc((c+1)*sizeof(double*)); // malloc an array of addresses to doubles
+    for(i=0;i<c;++i){
+        mat[i]=malloc((r+1)*sizeof(double));
+    } // end for i 
+
+    FILE *file;
+    // char fileName[] = "vectorInput.txt";
+    file=fopen(fileName, "r");
+    for(i = 0; i < r; i++){
+        for(j = 0; j < c; j++){
+            if (!fscanf(file, "%lf", &mat[i][j])) 
+                break;
+      } // end for j
+
+  } // end for i
+
+  return mat; // return the newly created matrix
+} // double **importMatrix
+// ================================================================================================ ⋀ 4. importMatrix
+*/
+
+
