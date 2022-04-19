@@ -33,6 +33,7 @@ using namespace std;
 
 // == Internal Program Function Prototypes ======================================================== ⋁ Function Prototypes
 void printMat(double *mat, int r, int col, string name);
+double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, string name);
 // ================================================================================================ ⋀ Function Prototypes
 
 
@@ -69,8 +70,21 @@ for (x = 0; x < rows*NUMDIM; x++){
 } // end for x
 cout << "read data" << endl;
 
-for (x = 0; x < rows*NUMDIM; x++)
-    cout << matObs[x] << endl;
+// mat in memory: for matrix
+// (0,0) (0,1) (0, 2)
+// (1,0) (1,1) (1, 2)
+
+// is REALLY LIKE THIS IN MEMORY (x,y)
+// (0,0) (0,1) (0, 2) (1,0) (1,1) (1, 2)
+// to iterate as rows: mat[x*c+y]
+// where x is the row iter and y is column iter, 
+// and c is the number of columns in the matrix
+
+// to unlock as column vectors: mat[y*r+x]
+
+
+printMat(matObs, rows, NUMDIM, "MAT OBS");
+printMat(matRef, rows, NUMDIM, "MAT REF");
 
 
 
@@ -79,15 +93,32 @@ for (x = 0; x < rows*NUMDIM; x++)
 // CREATE a_i - assume no bias with each vector sample
 double a_i = 1/rows;
 
-// CREATE S
+
+// matObs is read in as a 2x3, matRef is transposed, -->
+// CREATE B
 
 double B[NUMDIM][NUMDIM];
-for (x = 0; x < NUMDIM; x++){
-    for (y = 0; y < NUMDIM; y++){
-        for(int z = 0; z < )
-        B[x][y] = mat[x*c+y]
-    } // end for y
-} // end for x
+double sum = 0;
+    for (int x = 0; x < rows; x++) { // since this is transpose --> columns of A become rows
+        for (int y = 0; y < rows; y++) {
+            for (int k = 0; k < rows; k++){
+                cout << matObs[k*rows+x] << " "<< matRef[k*rows+y] << "\t";
+            } // end for k
+            B[x][y] = 0;
+            cout << "end element" << endl;
+        } // end for y
+        cout << endl << endl;
+    } // end for x
+
+for (int i = 0; i < NUMDIM; i++){
+    for (int j = 0; j < NUMDIM; j++){
+        cout << B[i][j] << " ";
+    } // end for j
+    cout << endl;
+} // end for i
+
+// printMat(B, NUMDIM,NUMDIM, "B Mat");
+
 
 
 
@@ -122,24 +153,27 @@ void printMat(double *mat, int r, int c, string name){
 
 // == 2. matMult 
 double* matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, string name){
+    double *product = (double*) malloc(rA*cB * sizeof(double));
+    for (int i = 0; i < rA*cB; i++)
+        product[i] = 0;
     cout << name << endl;
 
     if (cA != rB){
         perror("ERROR, matrix dimension error.  Columns of A != Rows of B.\n");
-        return -2;
+        return product;
     } // if (cA != rB)
 
-
+    double sum = 0;
     for (int x = 0; x < cA; x++) {
         for (int y = 0; y < rB; y++) {
-            
-            for (int k = 0; k < rB; k++){
+            for (int k = 0; k < cA; k++){
+
                 
             } // end for k
+
         } // end for y
-        cout << endl;
     } // end for x
-    return 
+    return product;
 } // void printMat
 // ================================================================================================ ⋀ FUNCTIONS  
 
