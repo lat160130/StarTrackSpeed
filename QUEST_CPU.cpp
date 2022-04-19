@@ -29,6 +29,11 @@ using namespace std;
 #define NUMDIM 3
 // ================================================================================================ ⋀ Preprocessor Directives
 
+// == Internal Program Function Prototypes ======================================================== ⋁ Function Prototypes
+void printMat(double *mat[3], int r, int col, char name[]);
+// ================================================================================================ ⋀ Function Prototypes
+
+
 // == Main Function =============================================================================== ⋁ Main Function
 int main(int argc, char *argv[]){
 
@@ -65,27 +70,23 @@ for (x = 0; x < rows; x++) {
     } // end for x
 } // end for y
 
-// PRINT OUT MATRICIES
-/*
-cout << txtMatObs << endl;
-for (x = 0; x < rows; x++) {
-    for (y = 0; y < NUMDIM; y++) {
-        printf("(%d,%d) = %lf\t", x,y, matObs[x][y]);
-    } // end for x
-    cout << endl;
-} // end for y
 
-cout << txtMatRef << endl;
-for (x = 0; x < rows; x++) {
-    for (y = 0; y < NUMDIM; y++) {
-        printf("(%d,%d) = %lf\t", x,y, matRef[x][y]);
-    } // end for x
-    cout << endl;
-} // end for y
-*/
-// == Quest Algorithm ============================================================================= QUEST Algorithm
+// == Quest Algorithm ============================================================================= ⋁ QUEST Algorithm
+// CREATE a_i - assume no bias with each vector sample
 double a_i = 1/rows;
-// ================================================================================================ QUEST Algorithm
+
+// CREATE S
+double sMAT[NUMDIM][NUMDIM];
+for (x = 0; x < NUMDIM; x++){
+    for (y = 0; y < NUMDIM; y++){
+        sMAT[x][y] = dotN(matObs[x], matRef[y], rows);
+    } // end for y
+} // end for x
+
+printMat(*sMAT, NUMDIM, NUMDIM, "sMAT");
+
+
+// ================================================================================================ ⋀ QUEST Algorithm
 
 // FREE Dynamically allocated memory.
 for (x = 0; x < rows; x++){
@@ -98,4 +99,14 @@ delete[] matRef;
 } // int main()
 // ================================================================================================ ⋀ Main Function
 
-
+// == FUNCTIONS =================================================================================== ⋁ FUNCTIONS
+void printMat(double **mat, int r, int c, string name){
+    cout << name << endl;
+    for (int x = 0; x < r; x++) {
+        for (int y = 0; y < c; y++) {
+            printf("(%d,%d) = %lf\t", x,y, mat[x][y]);
+        } // end for x
+        cout << endl;
+    } // end for y
+} // void printMat
+// ================================================================================================ ⋀ FUNCTIONS  

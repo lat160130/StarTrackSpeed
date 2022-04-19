@@ -17,6 +17,7 @@
 // 1. void XProd(vector3 V1, vector3 V2, vector3 *V3)
 // 2. double norm3L2(vector3 v1)
 // 3. double dot3(double x, double y, double z, double i, double j, double k)
+// 4. double dotN(double arr1[], double arr2[], int n);
 // 4. double standDevN
 // ================================================================================================ ⋀ Include Block
 
@@ -25,6 +26,7 @@
 vector3 xProd(vector3 V1, vector3 V2);
 double norm3L2(vector3 V1);
 double dot3(double x, double y, double z, double i, double j, double k);
+double dotN(double arr1[], double arr2[]);
 
 /********************************************************************/
 /* Function XProd returns the cross products of two vectors.        */
@@ -58,6 +60,17 @@ return out;
 
 } // Function dot3
 // ================================================================================================ ⋀ dot3
+
+// == 4. dotN ===================================================================================== ⋁ dotN
+double dotN(double arr1[], double arr2[], int n){
+  int sum = 0;
+  for (int i = 0; i < n; i++){
+      sum = sum + (arr1[i] * arr2[i]);
+  } // 
+  return sum;
+} // Function dotN
+// ================================================================================================ ⋀ dotN
+
 
 /*
 // == 4. standDevN ================================================================================ ⋁ standDevN
