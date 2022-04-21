@@ -4,6 +4,11 @@ clear;
 % we are reading in the matrices as column vectors
 a3 = readmatrix('vectorInObs.txt');
 b3 = readmatrix('vectorInRef.txt');
+
+n = size(a3);
+n = n(1);
+
+a_i = 1 / n;
 % x
 % y
 % z
@@ -24,17 +29,23 @@ b3 = readmatrix('vectorInRef.txt');
 % 
 % end % 
 
-disp(a3'*b3);
+
 B = a3'*b3;
-% a3 = a3(1:3,:);
-% b3 = b3(1:3,:);
-% disp(a3'*b3);
+S = B + B';
 
-a2 = a3(1:2,:);
-b2 = b3(1:2,:);
-disp(a2'*b2);
+Z = zeros(1,3);
 
-a1 = a3(1,:);
-b1 = b3(1,:);
-disp(a1'*b1);
+for i = 1:n
+    a3(i,:)
+    b3(i,:)
+    Z = Z + a_i*cross(a3(i,:), b3(i,:));
+end
+
+sigma = .5*trace(S);
+delta = det(S);
+kappa = trace(adjoint(S));
+a = sigma^2 - kappa;
+b = Z*Z' + sigma^2;
+c = delta + Z*S*Z'
+d = Z*S*S*Z'
 

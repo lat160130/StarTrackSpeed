@@ -26,7 +26,7 @@
 vector3 xProd(vector3 V1, vector3 V2);
 double norm3L2(vector3 V1);
 double dot3(double x, double y, double z, double i, double j, double k);
-double dotN(double arr1[], double arr2[]);
+double dotN(double arr1[], double arr2[], int n);
 
 /********************************************************************/
 /* Function XProd returns the cross products of two vectors.        */
@@ -71,7 +71,6 @@ double dotN(double arr1[], double arr2[], int n){
 } // Function dotN
 // ================================================================================================ ⋀ dotN
 
-
 /*
 // == 4. standDevN ================================================================================ ⋁ standDevN
 double standDevN(double *array, int arrLen){
@@ -84,4 +83,6 @@ void (double *matrix, quat q){
 
 } // Function rot2Quat
 // ================================================================================================ ⋀ rot2Quat
+
+
 */

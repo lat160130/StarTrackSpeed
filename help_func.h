@@ -27,7 +27,7 @@
 
 
 // == 1. importSunAndMagVecs ====================================================================== ⋁ 1. importSunAndMagVecs
-int importSunAndMagVecs(char *vectorTxtFile, vector3 *sunBody, vector3 *sunIne, vector3 *magBody, vector3 *magIne){
+int importSunAndMagVecs(const char *vectorTxtFile, vector3 *sunBody, vector3 *sunIne, vector3 *magBody, vector3 *magIne){
     FILE *fpSunMagVecs;
     double sunMagMat[NUMVECS][DIMS];
 
