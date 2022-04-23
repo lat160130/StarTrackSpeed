@@ -13,6 +13,7 @@
 
 // GENERAL COMMENTS:
 // ALL MATRICES ARE IN ROW MAJOR FORM.
+// OUTPUT QUATERNION IS VECTOR FIRST SCALAR LAST: [Q1 Q2 Q3 q4] where q4 is the scalar.
 
 // == Import Header File Block ==================================================================== ⋁ Import Header File Block
 #include <stdio.h>
