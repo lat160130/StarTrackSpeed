@@ -68,7 +68,7 @@ int importSunAndMagVecs(const char *vectorTxtFile, vector3 *sunBody, vector3 *su
 
  
     
-
+    fclose(fpSunMagVecs);
     return 0;
 } // importSunAndMagVecs(char *vectorTxtFile){
 
@@ -94,7 +94,7 @@ int numOfLines(FILE *txtFile){
     // iterator to go through number of lines
     for (;;){
         fc = fgetc(txtFile);
-        if (fc = EOF)
+        if (fc == EOF)
             break; // reached the end of file leave the for loop;
 
         if (fc == '\n')

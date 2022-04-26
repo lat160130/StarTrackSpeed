@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++",
+                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++/x86_64-pc-cygwin",
+                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++/backward",
+                " /usr/lib/gcc/x86_64-pc-cygwin/11/include",
+                " /usr/include",
+                " /usr/lib/gcc/x86_64-pc-cygwin/11/../../../../lib/../include/w32api"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/bin/Hostx64/x64/cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

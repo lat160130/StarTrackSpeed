@@ -26,7 +26,6 @@
 #include "string"
 #include <cmath>   
 using namespace std;
-
 // ================================================================================================ ⋀ Import Header File Block
 
 // == Preprocessor Directives ===================================================================== ⋁ Preprocessor Directives
@@ -281,7 +280,7 @@ free(B);
 free(S);
 free(S2);
 // free(invertS);
-
+// CLOSE IFSTREAM - this is taken care of by the destructor
 } // int main()
 // ================================================================================================ ⋀ Main Function
 

@@ -1,3 +1,5 @@
 NOTES for GPU compilation
 1. Recompile cuda code on each cuda machine, nvcc compiler does the optimization for you
 2. gProf may have difficulty with profiling c code, use the CUDA profiler.
+3. to compile with cuBLAS - nvcc -c cudaSample.cu -o example -lcublas
+4. dynamic values passed to a cuda kernel must be in gpu shared memory

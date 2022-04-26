@@ -42,9 +42,9 @@ __global__ void add( int *a, int *b, int *c ) {
     //          c[0] through c[7] will be computed concurrently
     //
     while (tid < N) {
-        c[tid] = a[tid] + b[tid];       // The actual computation done by the thread
-        tid += blockDim.x;       // Increment this thread's index by the number of threads per block:
-                                 // in this small case, each thread would then have a tid > N
+        c[tid] = a[tid] + b[tid];  // The actual computation done by the thread
+        tid += blockDim.x;         // Increment this thread's index by the number of threads per block:
+                                   // in this small case, each thread would then have a tid > N
     }
 }
 
@@ -66,6 +66,10 @@ int main( void ) {
         a[i] = i;
         b[i] = i;
     }
+    for (int i=0; i<N; i++) {
+        printf("a[%d] = %d\t b[%d] = %d\n", i, a[i], i, b[i]);
+    } // end for i
+    
 
     // 2.c. allocate the memory on the GPU
      cudaMalloc( (void**)&dev_a, N * sizeof(int) );
