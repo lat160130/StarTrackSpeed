@@ -3,14 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++",
-                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++/x86_64-pc-cygwin",
-                " /usr/lib/gcc/x86_64-pc-cygwin/11/include/c++/backward",
-                " /usr/lib/gcc/x86_64-pc-cygwin/11/include",
-                " /usr/include",
-                " /usr/lib/gcc/x86_64-pc-cygwin/11/../../../../lib/../include/w32api"
-            ],
+],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
