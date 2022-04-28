@@ -51,7 +51,8 @@ returnCodeImport = importSunAndMagVecs(vecIn, &sunBody, &sunIne, &magBody, &magI
 
 
 // Check to see if each vector worked.
-printf("ReturnCodeImport = %d\n", returnCodeImport);
+if (returnCodeImport != 0)
+    printf("ReturnCodeImport = %d\n", returnCodeImport);
 // Checking validity of cross product
 XProd(sunBody, sunIne, &test);
 // printVecVals(test);
@@ -76,14 +77,14 @@ t2i.z = test.z / normCross;
 
 XProd(t2b, sunBody, &t3b);
 XProd(t2i, sunIne,  &t3i);
-
+/*
 printVecVals(sunBody);
 printVecVals(t2b);
 printVecVals(t3b);
 printVecVals(sunIne);
 printVecVals(t2i);
 printVecVals(t3i);
-
+*/
 // Organize here and create the rotation matrix matRot
 // R = [t1b t2b t3b][t1i t2i t3i]^T each vector is a column vector pre-transpose
 // double dotCheck = dot3(sunBody.x, t2b.x, t3b.x, sunIne.x, t2i.x, t3i.x);
@@ -103,17 +104,16 @@ matRot[0][2] = dot3(sunBody.x, t2b.x, t3b.x, sunIne.z, t2i.z, t3i.z);
 matRot[1][2] = dot3(sunBody.y, t2b.y, t3b.y, sunIne.z, t2i.z, t3i.z);
 matRot[2][2] = dot3(sunBody.z, t2b.z, t3b.z, sunIne.z, t2i.z, t3i.z);
 
-
+/*
     for(int i = 0; i < DIMS; i++){
         for(int j = 0; j < DIMS; j++){
             printf("%g\t", matRot[i][j]);
         } // for - j - cols
         printf("\n");
     } // for - i - rows
-
+*/
 // ADD CONVERSION TO QUATERNION HERE
 // ================================================================================================ ⋀ Triad Algorithm
-
 return 0;
 } // int main()
 // ================================================================================================ ⋀ Main Function

@@ -224,13 +224,6 @@ printf("kappa = %lf\t delta = %lf\n", kappa, delta);
 printf("a = %lf\tb = %lf\n", a, b);
 printf("c = %lf\td = %lf\n", c, d);
 
-// -- Initial Lambda ------------------------------------------------ Initial Lambda
-/*
-double *invertS = (double*) malloc(NUMDIM*NUMDIM * sizeof(double));
-invertS[0] = 0;
-invertS[0] = 0;
-*/
-// ------------------------------------------------------------------ Initial Lambda
 
 
 // -- Newton's method for convergence of lambda --------------------- lambda
@@ -262,7 +255,7 @@ X[0] = (Z[0]*(beta*S[0] + S2[0] + alpha)) + (Z[1]*(beta*S[1] + S2[1]))         +
 X[1] = (Z[0]*(beta*S[3] + S2[3]        )) + (Z[1]*(beta*S[4] + S2[4] + alpha)) + (Z[2] *(beta*S[5] + S2[5]));
 X[2] = (Z[0]*(beta*S[6] + S2[6]        )) + (Z[1]*(beta*S[7] + S2[7]))         + (Z[2] *(beta*S[8] + S2[8] + alpha));
 
-double quat_denom = sqrt((gamma * gamma) + abs(X[0]*X[0] + X[1]*X[1] + X[2]*X[2]) );
+double quat_denom = sqrt((gamma * gamma) + sqrt(X[0]*X[0] + X[1]*X[1] + X[2]*X[2]) );
 
 
 double Q_opt[4];

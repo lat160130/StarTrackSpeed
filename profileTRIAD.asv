@@ -1,0 +1,14 @@
+% CPU
+command = "powershell -command Measure-Command { ./cpuTriad }";
+[status,cmdout] = system(command);
+status;
+cmdout;
+
+% GPU
+command = "powershell -command Measure-Command { ./a }";
+[status,cmdout] = system(command);
+status;
+cmdout;
+
+[speedExMili, matches] = strsplit(cmdout, ':');
+C = str2double(C(12))
