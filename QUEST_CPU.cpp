@@ -44,7 +44,13 @@ void matMult(double *matA, double *matB, int rA, int cA, int rB, int cB, double 
 int main(int argc, char *argv[]){
 
 int rows = atoi(argv[1]);  // The number of vectors coming in
-    
+
+// Input validate the number of rows
+if ((rows % 2 !=0) || (rows < 32)){
+    perror("Number of rows must be a factor 2 (2^n) and greater than 32.\n");
+   // return (-1);
+} // end if 
+
 
 // Declare the constants
 const char txtMatObs[] = "vectorInObs.txt";

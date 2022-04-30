@@ -3,3 +3,6 @@ NOTES for GPU compilation
 2. gProf may have difficulty with profiling c code, use the CUDA profiler.
 3. to compile with cuBLAS - nvcc -c cudaSample.cu -o example -lcublas
 4. dynamic values passed to a cuda kernel must be in gpu shared memory
+5. nvcc -arch=compute_13 or nvcc -arch=compute_11
+6. nvcc cuTriad.cu -IC:\Users\leont\cuda-samples\Common - for lenovo
+7. similar to 6 for the dell
