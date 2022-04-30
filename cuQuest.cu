@@ -150,38 +150,14 @@ __global__ void createZVec(double *Z, double *A, double *B, long long rows){
     } // end if tidx < 3
 } // __global__ void createZVec(double *Z, double *A, double *B)
 
-__global__ void initScalars(double *scalarVector, int numScal){
+__global__ void modifyZ(double *Z, double rows){
     int tidx = threadIdx.x;
+    if (tidx < 3)
+        Z[tidx] = Z[tidx] / rows;
 
-    scalarVector[tidx] = 1;
-    __syncthreads();
-} // __global__ void initScalars(double *scalarVector, int numScal)
+} // modifyZ(double *Z, double rows)
 
-__global__ void matTrace(double *mat, int columns, double *scalarMat,  int arrPosn){
-    // mat - matrix to find the trace of
-     // columns - number of rows in mat (3x3) is coming in ALWAYS, so columns == 3
-    // scalarMat, this matrix holds all the scalar values in the algorithm for simple access for gpu shared memory
-    // arrPosn - position in the array that sigma will hold
-
-    if (columns != 3){
-        perror("Columns must equal 3!\n");
-    } // end if columns
-
-    int tidx = threadIdx.x;
-    double sigma = 0;
-    for (int i = 0; i < rows; i++){
-        sigma = sigma + mat[i*columns + i];
-    } // end for i
-    scalarMat[arrPosn] = .5 * sigma;
-} // __global__ void matTrace(double *mat, long long rows)
-
-__global__ void genCofactor(double *mat, double *cofM){
-    int tidx = threadIdx.x;
-    int tidy = threadIdx.y;
-
-    
-} // __global__ void genCofactor(double *mat, double *cofM)
- // ================================================================================================ ⋀ CUDA Functions
+// ================================================================================================ ⋀ CUDA Functions
 
 // == Main Function =============================================================================== ⋁ Main Function
 int main(int argc, char *argv[]){
@@ -243,22 +219,22 @@ cout << "read data" << endl;
 // CREATE a_i - assume no bias with each vector sample
 // double a_i = 1/rows;
 
-
+// We don't do much with CUDA here other than treating what could me massive amounts of matrix multiplication and the long xProd sums,
+// everything else will be done with the CPU, way faster since our resulting matrices are puny in comparison to wasting time with the GPU.
 // DECLARE ALL THE CUDA MEMORY:
-double *cuMatObs, *cuMatRef, *cuB, *cuS, *cuZ, *cuCofactorS;//, *cuScalarArr, *cuS2
+double *cuMatObs, *cuMatRef, *cuB, *cuS, *cuZ;//, *cuX *cuCofactorS, *cuScalarArr, *cuS2;
 dim3 threads(SZBLK, SZBLK);
-dim3 grid(rows/SZBLK, rows/SZBLK);
-// cuScalarArr will be a special Array holding all the important scalars, row major, like this in memory:
-// cuScalarArr = [sigma, kappa, delta, a, b, c, d, lambda, beta, alpha, gamma]
+dim3 threads3x3(3,3);
+
 int sizeMatInput = rows*NUMDIMS    * sizeof(double); // nx3 matrix
 int sizeDCM      = NUMDIMS*NUMDIMS * sizeof(double); // 3x3 matrix
+int size3        = NUMDIMS         * sizeof(double); // 3x1 matrix
 
 
 cudaMalloc((void**) &cuMatObs, sizeMatInput);
 cudaMalloc((void**) &cuMatRef, sizeMatInput);
 cudaMemcpy(cuMatObs, matObs, sizeMatInput, cudaMemcpyHostToDevice);
 cudaMemcpy(cuMatRef, matRef, sizeMatInput, cudaMemcpyHostToDevice);
-
 
 
 // -- CREATE B ------------------------------------------------------ B MATRIX
@@ -268,28 +244,142 @@ MatrixMulCUDA<SZBLK> <<<1, threads>>>(cuB, cuMatObs, cuMatRef, rows, rows);
 
 // -- CREATE S ------------------------------------------------------ S MATRIX
 cudaMalloc((void**) &cuS, sizeDCM);
-dim3 threads3x3(3,3);
 matrixAddBandBT <<<1, threads3x3>>> (cuS, cuB,  NUMDIMS, NUMDIMS);
+
+double *S = (double*) malloc(sizeDCM);
+cudaMemcpy(S, cuS, sizeDCM, cudaMemcpyDeviceToHost);
 // ------------------------------------------------------------------ S MATRIX
 
-// -- CREATE Z ------------------------------------------------------ Z MATRIX
+// -- CREATE Z ------------------------------------------------------ Z VECTOR
+double *Z = (double*) malloc(size3);
 cudaMalloc((void**), &cuZ, NUMDIMS*sizeof(double));
 createZVec <<<1,3>>>(cuZ, cuMatObs, cuMatRef, rows);
-// ------------------------------------------------------------------ Z MATRIX
+cudaMemcpy(Z, cuZ, size3, cudaMemcpyDeviceToHost);
+// divide Z[j] by the a_i modifier
+for (j = 0; j < NUMDIM; j++)
+    Z[j] =  Z[j] / (double) rows;
+// ------------------------------------------------------------------ Z VECTOR
 
-// CREATE SCALARS
-cudaMalloc((void**), &cuScalarArr, NUMSCALARS*sizeof(double));
-initScalars <<<1,NUMSCALARS>>>(cuScalarArr, NUMSCALARS); // this initializes all values in the array to 1;
+// -- CREATE SIGMA -------------------------------------------------- Sigma
+double sigma = 0;
+// sigma = .5 * trace(S);
+for (i = 0; i < NUMDIM; i++){
+        sigma = sigma + S[i*NUMDIM + i];
+} // end for i
+sigma = .5*sigma; 
 
-// -- CREATE SIGMA -------------------------------------------------- SIGMA
-// cuScalarArr = [sigma, kappa, delta, a, b, c, d, lambda, beta, alpha, gamma]
-matTrace <<<1,1>>>(cuB, NUMDIMS, cuScalarArr,  0);
-// ------------------------------------------------------------------ SIGMA
+printf("sigma = %lf\n", sigma);
+cout << "sigma = " << sigma << endl;
+// ------------------------------------------------------------------ Sigma
 
-// -- CREATE KAPPA -------------------------------------------------- KAPPA
-cudaMalloc((void**), &cuCofactorS, sizeDCM);
 
-// ------------------------------------------------------------------ KAPPA
+
+// CONVENIENT EXPRESSION OF THE CHARACTERISTIC EQUATION WITH THE 
+// CAYLEY-HAMILTON THEOREM
+
+
+// -- CREATE KAPPA -------------------------------------------------- Kappa
+// Kappa = trace(adjoint(S));
+// Since we need the trace of the adjoint, we don't need to take transpose.
+double cofactorS[NUMDIM][NUMDIM];
+// ROW 0
+cofactorS[0][0] =  (S[4]*S[8] - S[5]*S[7]);
+cofactorS[0][1] = -(S[3]*S[8] - S[5]*S[6]);
+cofactorS[0][2] =  (S[3]*S[7] - S[4]*S[6]);
+// ROW 1
+cofactorS[1][0] = -(S[1]*S[8] - S[2]*S[7]);
+cofactorS[1][1] =  (S[0]*S[8] - S[2]*S[6]);
+cofactorS[1][2] = -(S[0]*S[7] - S[1]*S[6]);
+// ROW 2
+cofactorS[2][0] =  (S[1]*S[5] - S[2]*S[4]);
+cofactorS[2][1] = -(S[0]*S[5] - S[2]*S[3]);
+cofactorS[2][2] =  (S[0]*S[4] - S[1]*S[3]);
+
+double kappa = cofactorS[0][0] + cofactorS[1][1] + cofactorS[2][2];
+
+// -- CREATE DELTA -------------------------------------------------- Delta
+// delta = det(S);
+// double part1 = S[0] * (S[4]*S[8] - S[5]*S[7]);
+// double part2 = S[1] * (S[3]*S[8] - S[5]*S[6]);
+// double part3 = S[2] * (S[3]*S[7] - S[4]*S[6]);
+double delta = (S[0] * (S[4]*S[8] - S[5]*S[7])) 
+             - (S[1] * (S[3]*S[8] - S[5]*S[6]))
+             + (S[2] * (S[3]*S[7] - S[4]*S[6]));
+// ------------------------------------------------------------------ Delta
+
+// -- CREATE a ------------------------------------------------------ a
+double a = sigma*sigma - kappa; // (PROBABLY CAN GET RID OF IT)
+// ------------------------------------------------------------------ a
+
+// -- CREATE b ------------------------------------------------------ b
+double b = dotN(Z, Z, NUMDIM) + sigma*sigma;
+// ------------------------------------------------------------------ b
+
+// -- CREATE c ------------------------------------------------------ c
+// c = delta + Z'SZ;
+double c =  ( Z[0]* (S[0]*Z[0] + S[1]*Z[1] + S[2]*Z[2]) )
+          + ( Z[1]* (S[3]*Z[0] + S[4]*Z[1] + S[5]*Z[2]) )
+          + ( Z[2]* (S[6]*Z[0] + S[7]*Z[1] + S[8]*Z[2]) );
+c = delta + c;
+// ------------------------------------------------------------------ c
+
+// -- CREATE d ------------------------------------------------------ d
+double *S2 = (double*) malloc(NUMDIM*NUMDIM * sizeof(double));
+matMult(S, S, NUMDIM, NUMDIM, NUMDIM, NUMDIM, S2, "S^2");
+printMatHeap(S2, 3, 3, "Printing S^2");
+double d =  (Z[0]* (S2[0]*Z[0] + S2[1]*Z[1] + S2[2]*Z[2]))
+          + (Z[1]* (S2[3]*Z[0] + S2[4]*Z[1] + S2[5]*Z[2]))
+          + (Z[2]* (S2[6]*Z[0] + S2[7]*Z[1] + S2[8]*Z[2]));
+// ------------------------------------------------------------------ d
+
+
+
+printf("kappa = %lf\t delta = %lf\n", kappa, delta);
+printf("a = %lf\tb = %lf\n", a, b);
+printf("c = %lf\td = %lf\n", c, d);
+
+
+
+// -- Newton's method for convergence of lambda --------------------- lambda
+double tol = 1e-12;
+int max_it = 100;
+int iters = 0;
+double error = tol + 1;
+
+double l = 1, l2;
+while (error > tol && iters < max_it){
+    l2 = l - (((l*l*l*l) - (a+b)*l*l - c*l + (a*b + c*sigma - d)) / (4*l*l*l - 2*l*(a+b) -c));
+    error = fabs(l2 - l);
+    l = l2;
+    iters++;
+    cout << error << endl;
+} // end while error > tol && it < max_it
+cout << "root or final l = " << l << endl;
+// ------------------------------------------------------------------ lambda
+
+// -- Optimal Quaternion -------------------------------------------- Optimal Quaternion
+
+double beta = l - sigma;
+double alpha = l*l - sigma*sigma + kappa;
+double gamma = alpha*(l + sigma) - delta;
+
+// X = (alpha*I + beta*S + S^2)Z; --> 3x1 Matrix
+double X[3]; 
+X[0] = (Z[0]*(beta*S[0] + S2[0] + alpha)) + (Z[1]*(beta*S[1] + S2[1]))         + (Z[2] *(beta*S[2] + S2[2]));
+X[1] = (Z[0]*(beta*S[3] + S2[3]        )) + (Z[1]*(beta*S[4] + S2[4] + alpha)) + (Z[2] *(beta*S[5] + S2[5]));
+X[2] = (Z[0]*(beta*S[6] + S2[6]        )) + (Z[1]*(beta*S[7] + S2[7]))         + (Z[2] *(beta*S[8] + S2[8] + alpha));
+
+double quat_denom = sqrt((gamma * gamma) + sqrt(X[0]*X[0] + X[1]*X[1] + X[2]*X[2]) );
+
+
+double Q_opt[4];
+Q_opt[0] = X[0] / quat_denom;
+Q_opt[1] = X[1] / quat_denom;
+Q_opt[2] = X[2] / quat_denom;
+Q_opt[3] = gamma / quat_denom;
+// ------------------------------------------------------------------ Optimal Quaternion
+
+
 
 // ================================================================================================ ⋀ QUEST Algorithm
 // Free heap memory
@@ -301,8 +391,11 @@ cudaFree(cuMatRef);
 cudaFree(cuB);
 cudaFree(cuS);
 cudaFree(cuZ);
-cudaFree(cuScalarArr);
-//cudaFree(cuS2);
 
+/*
+cudaFree(cuX);
+cudaFree(cuScalarArr);
+cudaFree(cuS2);
+*/
 } // int main()
 // ================================================================================================ ⋀ Main Function
