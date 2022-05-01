@@ -1,117 +1,168 @@
-/*
- * A simplified example of vector addition in CUDA to illustrate the
- * data decomposition pattern using blocks of threads.
- *
- * To compile:
- *   nvcc -o va-GPU-simple VA-GPU-simple.cu
- */
+// This program computes matrix multiplication using shared memory tiling
+// By: Nick from CoffeeBeforeArch
 
+#include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <vector>
+#include "fstream" 
 #include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include "math_func.h"
+#include "help_func.h"     
+#include "string"
+#include <cmath>   
+using namespace std;
 
-// In this example we use a very small number of blocks
-// and threads in those blocks for illustration 
-// on a very small array
-#define N 8
-#define numThread 2 // 2 threads in a block
-#define numBlock 4  // 4 blocks
+using std::cout;
+using std::generate;
+using std::vector;
 
-/*
- * 1.
- *  The 'kernel' function that will be executed on the GPU device hardware.
- */
-__global__ void add( int *a, int *b, int *c ) {
+// Pull out matrix and shared memory tile size
+const int M = 1 << 10;
+const int N = 1 << 11;
+const int K = 1 << 12;
+const int SHMEM_SIZE = 1 << 10;
 
-    // the initial index that this thread will work on
-    int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    
-    // In this above example code, we assume a linear set of blocks of threads in the 'x' dimension,
-    // which is declared in main below when we run this function.
+__global__ void matrixMul(const int *a, const int *b, int *c) {
+  // Compute each thread's global row and column index
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // The actual computation is being done by individual threads
-    // in each of the blocks.
-    // e.g. we use 4 blocks and 2 threads per block (8 threads will run in parallel)
-    //      and our total array size N is 8
-    //      the thread whose threadIdx.x is 0 within block 0 will compute c[0],
-    //          because tid = (2 * 0)  + 0
-    //      the thread whose threadIdx.x is 0 within block 1 will compute c[2],
-    //          because tid = (2 * 1) + 0
-    //      the thread whose threadIdx.x is 1 within block 1 will compute c[3],
-    //          because tid = (2 * 1) + 1
-    //
-    //     The following while loop will execute once for this simple example:
-    //          c[0] through c[7] will be computed concurrently
-    //
-    while (tid < N) {
-        c[tid] = a[tid] + b[tid];  // The actual computation done by the thread
-        tid += blockDim.x;         // Increment this thread's index by the number of threads per block:
-                                   // in this small case, each thread would then have a tid > N
+  // Statically allocated shared memory
+  __shared__ int s_a[SHMEM_SIZE];
+  __shared__ int s_b[SHMEM_SIZE];
+
+  // Accumulate in temporary variable
+  int tmp = 0;
+
+  // Sweep tile across matrix
+  for (int i = 0; i < K; i += blockDim.x) {
+    // Load in elements for this tile
+    s_a[threadIdx.y * blockDim.x + threadIdx.x] = a[row * K + i + threadIdx.x];
+    s_b[threadIdx.y * blockDim.x + threadIdx.x] =
+        b[i * N + threadIdx.y * N + col];
+
+    // Wait for both tiles to be loaded in before doing computation
+    __syncthreads();
+
+    // Do matrix multiplication on the small matrix
+    for (int j = 0; j < blockDim.x; j++) {
+      tmp +=
+          s_a[threadIdx.y * blockDim.x + j] * s_b[j * blockDim.x + threadIdx.x];
     }
+
+    // Wait for all threads to finish using current tiles before loading in new
+    // ones
+    __syncthreads();
+  }
+
+  // Write back results
+  c[row * N + col] = tmp;
+}
+
+// Check result on the CPU
+// MxN = MxK * KxN
+void verify_result(vector<int> &a, vector<int> &b, vector<int> &c) {
+  // For every row...
+  for (int row = 0; row < M; row++) {
+    // For every column...
+    for (int col = 0; col < N; col++) {
+      // For every element in the row-column pair
+      int tmp = 0;
+      for (int i = 0; i < K; i++) {
+        // Accumulate the partial results
+        tmp += a[row * K + i] * b[i * N + col];
+      }
+
+      // Check against the CPU result
+      assert(tmp == c[row * N + col]);
+    }
+  }
+}
+
+int main() {
+  // Size (in bytes) of matrix
+  // MxN = MxK * KxN
+  size_t bytes_a = M * K * sizeof(int);
+  size_t bytes_b = K * N * sizeof(int);
+  size_t bytes_c = M * N * sizeof(int);
+
+  // Host vectors
+  vector<int> h_a(M * K);
+  vector<int> h_b(K * N);
+  vector<int> h_c(M * N);
+
+
+int NUMDIMS = 3;
+int rows = 128;
+const char txtMatObs[] = "vectorInObsCM.txt";
+const char txtMatRef[] = "vectorInRef.txt";
+
+ifstream fpMatObs(txtMatObs);
+ifstream fpMatRef(txtMatRef);
+cout << "WTF?" <<endl;
+// Check if either text file failed to open
+if ((!fpMatObs) || (!fpMatRef)){
+    perror("Text file opening failed: vectorInObs.txt or vectorInRef.txt failed to open.");
+    return 1;
+} // end if
+
+double *matObs = (double *) malloc(rows * NUMDIMS * sizeof(double));
+importMatrix(txtMatObs, matObs, rows, NUMDIMS);
+double *matRef = (double *) malloc(rows * NUMDIMS * sizeof(double));
+importMatrix(txtMatRef, matRef, rows, NUMDIMS);
+
+for (int i = 0; i < rows*NUMDIMS; i ++){
+    h_a[i] = matObs[i];
+    h_b[i] = matRef[i];
+    cout << h_a[i] << endl;
 }
 
 
-/*
- * The main program that directs the execution of vector add on the GPU
- */
-int main( void ) {
-    int *a, *b, *c;               // The arrays on the host CPU machine
-    int *dev_a, *dev_b, *dev_c;   // The arrays for the GPU device
+  // Allocate device memory
+  int *d_a, *d_b, *d_c;
+  cudaMalloc(&d_a, bytes_a);
+  cudaMalloc(&d_b, bytes_b);
+  cudaMalloc(&d_c, bytes_c);
 
-    // 2.a allocate the memory on the CPU
-    a = (int*)malloc( N * sizeof(int) );
-    b = (int*)malloc( N * sizeof(int) );
-    c = (int*)malloc( N * sizeof(int) );
+  // Copy data to the device
+  cudaMemcpy(d_a, h_a.data(), bytes_a, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_b, h_b.data(), bytes_b, cudaMemcpyHostToDevice);
 
-    // 2.b. fill the arrays 'a' and 'b' on the CPU with dummy values
-    for (int i=0; i<N; i++) {
-        a[i] = i;
-        b[i] = i;
-    }
-    for (int i=0; i<N; i++) {
-        printf("a[%d] = %d\t b[%d] = %d\n", i, a[i], i, b[i]);
-    } // end for i
-    
+  // Threads per CTA dimension
+  int THREADS = 32;
 
-    // 2.c. allocate the memory on the GPU
-     cudaMalloc( (void**)&dev_a, N * sizeof(int) );
-     cudaMalloc( (void**)&dev_b, N * sizeof(int) );
-     cudaMalloc( (void**)&dev_c, N * sizeof(int) );
+  // Blocks per grid dimension (assumes THREADS divides M and N evenly)
+  int BLOCKS_X = N / THREADS;
+  int BLOCKS_Y = M / THREADS;
 
-    // 2.d. copy the arrays 'a' and 'b' to the GPU
-     cudaMemcpy( dev_a, a, N * sizeof(int),
-                              cudaMemcpyHostToDevice );
-     cudaMemcpy( dev_b, b, N * sizeof(int),
-                              cudaMemcpyHostToDevice );
+  // Use dim3 structs for block  and grid dimensions
+  dim3 threads(THREADS, THREADS);
+  dim3 blocks(BLOCKS_X, BLOCKS_Y);
 
-    // 3. Execute the vector addition 'kernel function' on th GPU device,
-    // declaring how many blocks and how many threads per block to use.
-    add<<<numBlock,numThread>>>( dev_a, dev_b, dev_c );
+  // Launch kernel
+  matrixMul<<<blocks, threads>>>(d_a, d_b, d_c);
 
-    // 4. copy the array 'c' back from the GPU to the CPU
-    cudaMemcpy( c, dev_c, N * sizeof(int),
-                              cudaMemcpyDeviceToHost );
+  // Copy back to the host
+  cudaMemcpy(h_c.data(), d_c, bytes_c, cudaMemcpyDeviceToHost);
 
-    // verify that the GPU did the work we requested
-    bool success = true;
-    int total=0;
-    printf("Checking %d values in the array.\n", N);
-    for (int i=0; i<N; i++) {
-        if ((a[i] + b[i]) != c[i]) {
-            printf( "Error:  %d + %d != %d\n", a[i], b[i], c[i] );
-            success = false;
-        }
-        total += 1;
-    }
-    if (success)  printf( "We did it, %d values correct!\n", total );
+  // Check result
+  verify_result(h_a, h_b, h_c);
 
-    // free the memory we allocated on the CPU
-    free( a );
-    free( b );
-    free( c );
+  for (int i = 0; i < NUMDIMS * rows; i ++){
+    cout << "h_c[" << i << "] = " << h_c[i] << endl;
+  } // for
 
-    // free the memory we allocated on the GPU
-     cudaFree( dev_a );
-     cudaFree( dev_b );
-     cudaFree( dev_c );
+  cout << "COMPLETED SUCCESSFULLY\n";
 
-    return 0;
+  // Free memory on device
+  cudaFree(d_a);
+  cudaFree(d_b);
+  cudaFree(d_c);
+
+  return 0;
 }

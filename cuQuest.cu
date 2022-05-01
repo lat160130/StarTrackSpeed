@@ -18,6 +18,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include <assert.h>
+#include "math_func.h"
+#include <math.h>
+#include "help_func.h"
 
 // CUDA runtime
 #include <cuda_runtime.h>
@@ -26,182 +29,87 @@
 // Helper functions and utilities to work with CUDA
 #include <helper_functions.h>
 #include <helper_cuda.h>
+#include "cublas_v2.h"
+// #include "cublas.h"
 
 using namespace std;
 // ================================================================================================ ⋀ Import Header File Block
 
 // == Preprocessor Macros ========================================================================= ⋁ Preprocessor Macros
 #define NUMDIMS 3
-#define ROWS 4
-#define NUMSCALARS 11
-#define N (2048 * 8)
-#define THREADS_PER_BLOCK 512
-#define SZBLK 64
-#define TILE_DIM 32
 // ================================================================================================ ⋀ Preprocessor Macros
 
 // == CUDA Functions ============================================================================== ⋁ CUDA Functions
-
-// GENERAL MATRIX MULTIPLICATION
-template <int BLOCK_SIZE> __global__ void MatrixMulCUDA(double *C, double *A, double *B, long long wA, long long wB) {
-    /**
-     * Matrix multiplication (CUDA Kernel) on the device: C = A * B
-     * wA is A's width and wB is B's width
-     */
-    
-      // Block index
-      int bx = blockIdx.x;
-      int by = blockIdx.y;
-    
-      // Thread index
-      int tx = threadIdx.x;
-      int ty = threadIdx.y;
-    
-      // Index of the first sub-matrix of A processed by the block
-      int aBegin = wA * BLOCK_SIZE * by;
-    
-      // Index of the last sub-matrix of A processed by the block
-      int aEnd   = aBegin + wA - 1;
-    
-      // Step size used to iterate through the sub-matrices of A
-      int aStep  = BLOCK_SIZE;
-    
-      // Index of the first sub-matrix of B processed by the block
-      int bBegin = BLOCK_SIZE * bx;
-    
-      // Step size used to iterate through the sub-matrices of B
-      int bStep  = BLOCK_SIZE * wB;
-    
-      // Csub is used to store the element of the block sub-matrix
-      // that is computed by the thread
-      double Csub = 0;
-    
-      // Loop over all the sub-matrices of A and B
-      // required to compute the block sub-matrix
-      for (int a = aBegin, b = bBegin;
-           a <= aEnd;
-           a += aStep, b += bStep) {
-        // Declaration of the shared memory array As used to
-        // store the sub-matrix of A
-        __shared__ double As[BLOCK_SIZE][BLOCK_SIZE];
-    
-        // Declaration of the shared memory array Bs used to
-        // store the sub-matrix of B
-        __shared__ double Bs[BLOCK_SIZE][BLOCK_SIZE];
-    
-        // Load the matrices from device memory
-        // to shared memory; each thread loads
-        // one element of each matrix
-        As[ty][tx] = A[a + wA * ty + tx];
-        Bs[ty][tx] = B[b + wB * ty + tx];
-    
-        // Synchronize to make sure the matrices are loaded
-        __syncthreads();
-    
-        // Multiply the two matrices together;
-        // each thread computes one element
-        // of the block sub-matrix
-    #pragma unroll
-    
-        for (int k = 0; k < BLOCK_SIZE; ++k) {
-          Csub += As[ty][k] * Bs[k][tx];
-        }
-    
-        // Synchronize to make sure that the preceding
-        // computation is done before loading two new
-        // sub-matrices of A and B in the next iteration
-        __syncthreads();
-      }
-    
-      // Write the block sub-matrix to device memory;
-      // each thread writes one element
-      int c = wB * BLOCK_SIZE * by + BLOCK_SIZE * bx;
-      C[c + wB * ty + tx] = Csub;
- } // __global__ void MatrixMulCUDA(double *C, double *A, double *B, int wA, int wB) 
-
-// CREATE S FROM SUMMING B AND B TRANSPOSE
-__global__ void matrixAddBandBT(double *C, double *B,  int r, int c){
+__global__ void printMat(float *mat, int r, int c){
     int tidx = threadIdx.x;
-    int tidy = threadIdx.y;
-        // C = B + BT (B Transpose)
-    if (tidx < r && tidy < c){
-        C[tidx*c + tidy] = B[tidx*c + tidy] + B[tidy*c + tidx];
-    } // if (tidx < r && tidy < c)
+    if (tidx < 9){
+        printf("mat[%d] = %lf\n", tidx, mat[tidx]);
+    }
+} //
+// ================================================================================================ ⋀ CUDA Functions
 
-} // __global__ void matrixAdd2(double *C, double *A, double *B, int r, int c)
+// == FUNCTIONS =================================================================================== ⋁ FUNCTIONS
+// == 1. printMat ================================================================================= ⋁ printMatHeap
+void printMatHeap(float *mat, int r, int c, string name){
+    cout << name << endl;
+    for (int y = 0; y < c; y++) {
+        for (int x = 0; x < r; x++) {
+            printf("(%d,%d) = %e\t", x,y, mat[y*c+x]);
+        } // end for y
+        cout << endl;
+    } // end for x
+} // void printMat
+// ================================================================================================ ⋀ printMatHeap
 
-// CREATE Z VECTOR TO IMPLEMENT INTO K VECTOR
-__global__ void createZVec(double *Z, double *A, double *B, long long rows){
-    int tidx = threadIdx.x; // this will always equal to three.
-    if (tidx < 3){
-        Z[tidx] = 0;
-        __syncthreads();
+// == 2. matMult ================================================================================== ⋁ matMult
+void matMult(float *matA, float *matB, int rA, int cA, int rB, int cB, float *product, string name){
+    for (int i = 0; i < rA*cB; i++)
+        product[i] = 0;
+    cout << name << endl;
 
-        for (int i = 0; i < rows; i++){
-            int 
-            Z[tidx] = Z[tidx] + ( (A[(tidx%3 + 1)*rows + i ] * B[i*NUMDIMS + ((tidx+2)%3)]) - (A[(tidx%3 + 2)*rows + i ] * B[i*NUMDIMS + ((tidx+1)%3)]) )
+    if (cA != rB){
+        perror("ERROR, matrix dimension error.  Columns of A != Rows of B.\n");
+        return;
+    } // if (cA != rB)
 
-        } // end for i
-        __syncthreads();
+    for (int x = 0; x < rA; x++) {
+        for (int y = 0; y < cA; y++) {
+            for (int k = 0; k < rB; k++){
+                product[x*cA+y] += matA[x*cA+k] * matB[k*cB+y];
+            } // end for k
 
-        Z[tidx] = pow(-1, tidx % 2) * Z[tidx];
-        __syncthreads();
+        } // end for y
+    } // end for x
+    return;
+} // void printMat
+// ================================================================================================ ⋀ matMult
+// ================================================================================================ ⋀ FUNCTIONS  
 
-    } // end if tidx < 3
-} // __global__ void createZVec(double *Z, double *A, double *B)
-
-__global__ void initScalars(double *scalarVector, int numScal){
-    int tidx = threadIdx.x;
-
-    scalarVector[tidx] = 1;
-    __syncthreads();
-} // __global__ void initScalars(double *scalarVector, int numScal)
-
-__global__ void matTrace(double *mat, int columns, double *scalarMat,  int arrPosn){
-    // mat - matrix to find the trace of
-     // columns - number of rows in mat (3x3) is coming in ALWAYS, so columns == 3
-    // scalarMat, this matrix holds all the scalar values in the algorithm for simple access for gpu shared memory
-    // arrPosn - position in the array that sigma will hold
-
-    if (columns != 3){
-        perror("Columns must equal 3!\n");
-    } // end if columns
-
-    int tidx = threadIdx.x;
-    double sigma = 0;
-    for (int i = 0; i < rows; i++){
-        sigma = sigma + mat[i*columns + i];
-    } // end for i
-    scalarMat[arrPosn] = .5 * sigma;
-} // __global__ void matTrace(double *mat, long long rows)
-
-__global__ void genCofactor(double *mat, double *cofM){
-    int tidx = threadIdx.x;
-    int tidy = threadIdx.y;
-
-    
-} // __global__ void genCofactor(double *mat, double *cofM)
- // ================================================================================================ ⋀ CUDA Functions
 
 // == Main Function =============================================================================== ⋁ Main Function
 int main(int argc, char *argv[]){
 
-long long rows = atoi(argv[1]);  // The number of vectors coming in
-
+long rows = atoi(argv[1]);  // The number of vectors coming in
+const float a_i = 1;//a_i = 1/ (float) rows;
+const float *p_a_i;
+p_a_i = &a_i;
+/*
 // Input validate the number of rows
 if ((rows % 2 !=0) || (rows < 32)){
     perror("Number of rows must be a factor 2 (2^n) and greater than 32.\n");
    return -1;
 } // end if 
-
+*/
 // Declare the constants
-const char txtMatObs[] = "vectorInObs.txt";
-const char txtMatRef[] = "vectorInRef.txt";
+const char txtMatObs[] = "vectorInObsCM.txt";
+const char txtMatRef[] = "vectorInRefCM.txt";
 int i, j;
+FILE *fpMatObs, *fpMatRef;
+fpMatObs = fopen(txtMatObs, "r");
+fpMatRef = fopen(txtMatRef, "r");
 
-
-ifstream fpMatObs(txtMatObs);
-ifstream fpMatRef(txtMatRef);
+//ifstream fpMatObs(txtMatObs);
+//ifstream fpMatRef(txtMatRef);
 
 // Check if either text file failed to open
 if ((!fpMatObs) || (!fpMatRef)){
@@ -215,13 +123,33 @@ double *matObs = (double*) malloc(rows*NUMDIMS * sizeof(double));
 double *matRef = (double*) malloc(rows*NUMDIMS * sizeof(double));
 
 cout << "readin data" << endl;
-for (i = 0; i < rows; i++){
-    for (j = 0; j < NUMDIMS; j++){
-    fpMatObs >> matObs[j*NUMDIMS + i]; // switched to column major for pretranspose
-    fpMatRef >> matRef[i*NUMDIMS + j];
+// read in as column major for cuBLAS package
+
+
+double a;
+
+for (i = 0; i < NUMDIMS; i++){
+    for (j = 0; j < rows; j++){
+    //    fpMatObs >> a;
+    //    fpMatObs >> matObs[j*rows + i];
+    //    fpMatRef >> matRef[j*rows + i];
+    //    cout << a << endl;
+        fscanf(fpMatObs, "%lf", &matObs[i*rows + j]);
+        fscanf(fpMatRef, "%lf", &matRef[i*rows + j]);  
     } // end for j
 } // end for i
+fclose(fpMatObs);
+fclose(fpMatRef);
 cout << "read data" << endl;
+
+for (int k = 0; k < rows*NUMDIMS; k++){
+    cout << "matobs[" << k << "] = " << matObs[k] << endl;
+}
+for (int k = 0; k < rows*NUMDIMS; k++){
+    cout << "matref[" << k << "] = " << matRef[k] << endl;
+}
+//printMatHeap(matObs, rows, NUMDIMS, "matObs");
+//printMatHeap(matRef, rows, NUMDIMS, "matRef");
 
 // mat in memory: for matrix
 // (0,0) (0,1) (0, 2)
@@ -240,69 +168,127 @@ cout << "read data" << endl;
 
 
 // == Quest Algorithm ============================================================================= ⋁ QUEST Algorithm
+
+
 // CREATE a_i - assume no bias with each vector sample
 // double a_i = 1/rows;
 
-
-// DECLARE ALL THE CUDA MEMORY:
-double *cuMatObs, *cuMatRef, *cuB, *cuS, *cuZ, *cuCofactorS;//, *cuScalarArr, *cuS2
-dim3 threads(SZBLK, SZBLK);
-dim3 grid(rows/SZBLK, rows/SZBLK);
-// cuScalarArr will be a special Array holding all the important scalars, row major, like this in memory:
-// cuScalarArr = [sigma, kappa, delta, a, b, c, d, lambda, beta, alpha, gamma]
-int sizeMatInput = rows*NUMDIMS    * sizeof(double); // nx3 matrix
-int sizeDCM      = NUMDIMS*NUMDIMS * sizeof(double); // 3x3 matrix
+// We don't do much with CUDA here other than treating what could be massive amounts of matrix multiplication and the long xProd sums,
+// everything else will be done with the CPU, way faster since our resulting matrices are puny in comparison to wasting time with the GPU.
 
 
-cudaMalloc((void**) &cuMatObs, sizeMatInput);
+// DECLARE ALL THE CUDA & CUBLAS MEMORY/TYPES:
+float *cuMatObs, *cuMatRef, *cuB, *cuS, *cuScalarArr;//, *cuX *cuCofactorS, *cuScalarArr, *cuS2;
+
+cudaError_t cudaStat;
+cublasStatus_t stat;
+cublasHandle_t handle;
+//cublasInit();
+
+dim3 threads((long) rows, (long) rows);
+dim3 threads3x3(3,3);
+
+int sizeMatInput = rows*NUMDIMS    * sizeof(float); // nx3 matrix
+int sizeDCM      = NUMDIMS*NUMDIMS * sizeof(float); // 3x3 matrix
+
+printf("Going to the device\n");
+/*
+cudaStat=cudaMalloc((void**) &cuMatObs, sizeMatInput);
+if (cudaStat != CUBLAS_STATUS_SUCCESS){
+    printf ("cuMatObs: CUBLAS initialization failed\n");
+    return EXIT_FAILURE;
+} // if cudaStat != cublas success
+
+cudaStat=cudaMalloc((void**) &cuMatRef, sizeMatInput);
+if (cudaStat != CUBLAS_STATUS_SUCCESS){
+    printf ("cuMatRef: CUBLAS initialization failed\n");
+    return EXIT_FAILURE;
+} // if cudaStat != cublas success
+
+cudaStat=cudaMalloc((void**) &cuB, sizeDCM);
+if (cudaStat != CUBLAS_STATUS_SUCCESS){
+    printf ("cuB: CUBLAS initialization failed\n");
+    return EXIT_FAILURE;
+} // if stat != cublas success
+*/
+/*cudaMalloc((void**) &cuMatObs, sizeMatInput);
 cudaMalloc((void**) &cuMatRef, sizeMatInput);
 cudaMemcpy(cuMatObs, matObs, sizeMatInput, cudaMemcpyHostToDevice);
-cudaMemcpy(cuMatRef, matRef, sizeMatInput, cudaMemcpyHostToDevice);
-
-
-
+cudaMemcpy(cuMatRef, matRef, sizeMatInput, cudaMemcpyHostToDevice);*/
+float *B = (float*) malloc(sizeDCM);
+cublasSetMatrix(rows, NUMDIMS,    sizeMatInput, matObs, rows,    cuMatObs, rows);
+cublasSetMatrix(rows, NUMDIMS,    sizeMatInput, matRef, rows,    cuMatRef, rows);
+cublasSetMatrix(NUMDIMS, NUMDIMS, sizeDCM,      B,      NUMDIMS, cuB,      NUMDIMS);
 // -- CREATE B ------------------------------------------------------ B MATRIX
-cudaMalloc((void**) &cuB, sizeDCM);
-MatrixMulCUDA<SZBLK> <<<1, threads>>>(cuB, cuMatObs, cuMatRef, rows, rows);
+//cudaMalloc((void**) &cuB, sizeDCM);
+stat = cublasCreate(&handle);
+cout << "cublasCreate stat = " << stat << endl;
+    if (stat != CUBLAS_STATUS_SUCCESS) {
+    printf ("CUBLAS initialization failed\n");
+    return EXIT_FAILURE;
+ } // if stat != cublas success
+
+stat = cublasSgemm(handle, CUBLAS_OP_T,CUBLAS_OP_N, NUMDIMS, NUMDIMS, rows, p_a_i, cuMatObs, rows, cuMatRef, rows, p_a_i, cuB, NUMDIMS);
+cout << "cublasSgemm stat = " << stat << endl;
+cudaDeviceSynchronize();
+cublasDestroy(handle);
+// printMat<<<1,1>>>(cuB, rows, NUMDIMS);
+if (stat != CUBLAS_STATUS_SUCCESS) {
+    printf ("matrix multiply failed");
+    cudaFree(cuMatObs);
+    cudaFree(cuMatRef);
+    cudaFree(cuB);
+    free(matObs);
+    free(matRef);
+    cublasDestroy(handle);
+    return EXIT_FAILURE;
+} // if stat != cublas success   
+
+
+stat = cublasGetMatrix(NUMDIMS, NUMDIMS, sizeDCM, cuB, NUMDIMS, B, NUMDIMS);
+cout << "cublas Get Matrix stat = " << stat << endl;
+if (stat != CUBLAS_STATUS_SUCCESS) {
+    printf ("data download failed\n");
+    cudaFree(cuMatObs);
+    cudaFree(cuMatRef);
+    cudaFree(cuB);
+    free(matObs);
+    free(matRef);
+    cublasDestroy(handle);
+    free(B);    
+
+    return EXIT_FAILURE;
+} // if stat != cublas success
+
+printMatHeap(B, NUMDIMS, NUMDIMS, "B matrix");
 // ------------------------------------------------------------------ B MATRIX
 
-// -- CREATE S ------------------------------------------------------ S MATRIX
-cudaMalloc((void**) &cuS, sizeDCM);
-dim3 threads3x3(3,3);
-matrixAddBandBT <<<1, threads3x3>>> (cuS, cuB,  NUMDIMS, NUMDIMS);
-// ------------------------------------------------------------------ S MATRIX
 
-// -- CREATE Z ------------------------------------------------------ Z MATRIX
-cudaMalloc((void**), &cuZ, NUMDIMS*sizeof(double));
-createZVec <<<1,3>>>(cuZ, cuMatObs, cuMatRef, rows);
-// ------------------------------------------------------------------ Z MATRIX
+// ==================================================================|
+// = BEGINNING FROM HERE BADNESS BELOW BADNESS BELOW BADNESS BELOW ==|
+// ==================================================================|
 
-// CREATE SCALARS
-cudaMalloc((void**), &cuScalarArr, NUMSCALARS*sizeof(double));
-initScalars <<<1,NUMSCALARS>>>(cuScalarArr, NUMSCALARS); // this initializes all values in the array to 1;
 
-// -- CREATE SIGMA -------------------------------------------------- SIGMA
-// cuScalarArr = [sigma, kappa, delta, a, b, c, d, lambda, beta, alpha, gamma]
-matTrace <<<1,1>>>(cuB, NUMDIMS, cuScalarArr,  0);
-// ------------------------------------------------------------------ SIGMA
 
-// -- CREATE KAPPA -------------------------------------------------- KAPPA
-cudaMalloc((void**), &cuCofactorS, sizeDCM);
-
-// ------------------------------------------------------------------ KAPPA
 
 // ================================================================================================ ⋀ QUEST Algorithm
 // Free heap memory
 free(matObs);
 free(matRef);
+free(B);
 
 cudaFree(cuMatObs);
 cudaFree(cuMatRef);
 cudaFree(cuB);
-cudaFree(cuS);
-cudaFree(cuZ);
-cudaFree(cuScalarArr);
-//cudaFree(cuS2);
 
+// cudaFree(cuS);
+//cudaFree(cuZ);
+
+/*
+cudaFree(cuX);
+cudaFree(cuScalarArr);
+cudaFree(cuS2);
+*/
+return 0;
 } // int main()
 // ================================================================================================ ⋀ Main Function
