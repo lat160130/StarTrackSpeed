@@ -1,4 +1,5 @@
 /*
+<<<<<<< HEAD
 // GENERAL MATRIX MULTIPLICATION
 __global__ void MatrixMulCUDA(double* d_M, double* d_N, double* d_P, long width)
 int row = blockIdx.y*width+threadIdx.y;
@@ -115,6 +116,8 @@ __global__ void modifyZ(double *Z, double rows){
         Z[tidx] = Z[tidx] / rows;
 
 } // modifyZ(double *Z, double rows)
+=======
+>>>>>>> ce8fc7912c9fe3fd2e697911130e3995af22d28e
 __global__ void initScalars(double *scalarVector, int numScal){
     int tidx = threadIdx.x;
 
@@ -287,3 +290,7 @@ cudaMalloc((void**), &cuX, NUMDIMS*sizeof(double));
 // ------------------------------------------------------------------ X VECTOR
 
 
+<<<<<<< HEAD
+=======
+*/
+>>>>>>> ce8fc7912c9fe3fd2e697911130e3995af22d28e
