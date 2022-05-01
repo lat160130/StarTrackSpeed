@@ -15,6 +15,8 @@
 #include "help_func.h"     
 #include "string"
 #include <cmath>   
+#define NUMDIMS 3
+
 using namespace std;
 
 using std::cout;
@@ -27,7 +29,7 @@ const int N = 1 << 11;
 const int K = 1 << 12;
 const int SHMEM_SIZE = 1 << 10;
 
-__global__ void matrixMul(const int *a, const int *b, int *c) {
+__global__ void matrixMul(const double *a, const double *b, double *c) {
   // Compute each thread's global row and column index
   int row = blockIdx.y * blockDim.y + threadIdx.y;
   int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,13 +68,13 @@ __global__ void matrixMul(const int *a, const int *b, int *c) {
 
 // Check result on the CPU
 // MxN = MxK * KxN
-void verify_result(vector<int> &a, vector<int> &b, vector<int> &c) {
+void verify_result(vector<double> &a, vector<double> &b, vector<double> &c) {
   // For every row...
   for (int row = 0; row < M; row++) {
     // For every column...
     for (int col = 0; col < N; col++) {
       // For every element in the row-column pair
-      int tmp = 0;
+      double tmp = 0;
       for (int i = 0; i < K; i++) {
         // Accumulate the partial results
         tmp += a[row * K + i] * b[i * N + col];
@@ -87,44 +89,49 @@ void verify_result(vector<int> &a, vector<int> &b, vector<int> &c) {
 int main() {
   // Size (in bytes) of matrix
   // MxN = MxK * KxN
-  size_t bytes_a = M * K * sizeof(int);
-  size_t bytes_b = K * N * sizeof(int);
-  size_t bytes_c = M * N * sizeof(int);
+  size_t bytes_a = M * K * sizeof(double);
+  size_t bytes_b = K * N * sizeof(double);
+  size_t bytes_c = M * N * sizeof(double);
 
   // Host vectors
-  vector<int> h_a(M * K);
-  vector<int> h_b(K * N);
-  vector<int> h_c(M * N);
+  vector<double> h_a(M * K);
+  vector<double> h_b(K * N);
+  vector<double> h_c(M * N);
 
 
-int NUMDIMS = 3;
 int rows = 128;
 const char txtMatObs[] = "vectorInObsCM.txt";
 const char txtMatRef[] = "vectorInRef.txt";
 
+
 ifstream fpMatObs(txtMatObs);
 ifstream fpMatRef(txtMatRef);
-cout << "WTF?" <<endl;
 // Check if either text file failed to open
 if ((!fpMatObs) || (!fpMatRef)){
     perror("Text file opening failed: vectorInObs.txt or vectorInRef.txt failed to open.");
     return 1;
 } // end if
+double *matObs = (double*) malloc(rows*NUMDIMS * sizeof(double));
+double *matRef = (double*) malloc(rows*NUMDIMS * sizeof(double));
 
-double *matObs = (double *) malloc(rows * NUMDIMS * sizeof(double));
-importMatrix(txtMatObs, matObs, rows, NUMDIMS);
-double *matRef = (double *) malloc(rows * NUMDIMS * sizeof(double));
-importMatrix(txtMatRef, matRef, rows, NUMDIMS);
+cout << "readin data" << endl;
+for (int i = 0; i < rows*NUMDIMS; i++){
 
-for (int i = 0; i < rows*NUMDIMS; i ++){
-    h_a[i] = matObs[i];
-    h_b[i] = matRef[i];
-    cout << h_a[i] << endl;
-}
+    fpMatObs >> h_a[i];//matObs[i];
+    fpMatRef >> h_b[i];//matRef[i];
+} // end for x
+cout << "read data" << endl;
+
+cout << "verify data" << endl;
+for (int i = 0; i < rows*NUMDIMS; i++){
+
+    cout << h_a[i];//matObs[i];
+    // fpMatRef >> h_b[i];//matRef[i];
+} // end for x
 
 
   // Allocate device memory
-  int *d_a, *d_b, *d_c;
+  double *d_a, *d_b, *d_c;
   cudaMalloc(&d_a, bytes_a);
   cudaMalloc(&d_b, bytes_b);
   cudaMalloc(&d_c, bytes_c);
@@ -137,25 +144,26 @@ for (int i = 0; i < rows*NUMDIMS; i ++){
   int THREADS = 32;
 
   // Blocks per grid dimension (assumes THREADS divides M and N evenly)
-  int BLOCKS_X = N / THREADS;
+  int BLOCKS_X = rows / THREADS;
   int BLOCKS_Y = M / THREADS;
 
   // Use dim3 structs for block  and grid dimensions
   dim3 threads(THREADS, THREADS);
-  dim3 blocks(BLOCKS_X, BLOCKS_Y);
+  dim3 blocks(BLOCKS_X, 1);
 
   // Launch kernel
   matrixMul<<<blocks, threads>>>(d_a, d_b, d_c);
 
   // Copy back to the host
   cudaMemcpy(h_c.data(), d_c, bytes_c, cudaMemcpyDeviceToHost);
+ for (int i = 0; i < NUMDIMS * NUMDIMS; i ++){
+    cout << "h_c[" << i << "] = " << h_c[i] << endl;
+  } // for
 
   // Check result
   verify_result(h_a, h_b, h_c);
 
-  for (int i = 0; i < NUMDIMS * rows; i ++){
-    cout << "h_c[" << i << "] = " << h_c[i] << endl;
-  } // for
+ 
 
   cout << "COMPLETED SUCCESSFULLY\n";
 
