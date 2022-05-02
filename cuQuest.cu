@@ -23,6 +23,7 @@ int main(int argc, char *argv[]){
 
 int rows = atoi(argv[1]);  // The number of vectors coming in
 float a_i = 1 / (float) rows;
+float beta = 0.0f;
 const char txtMatObs[] = "vectorInObsCM.txt";
 const char txtMatRef[] = "vectorInRefCM.txt";
 
@@ -87,7 +88,7 @@ if (stat != CUBLAS_STATUS_SUCCESS) {
 } // end if (stat != CUBLAS_STATUS_SUCCESS)
 cudaDeviceSynchronize();
 // copy matObs to GPU space
-stat = cublasSetMatrix(rows, NUMDIMS, sizeof(*cuMatObs), matObs, rows, cuMatObs, rows);
+stat = cublasSetMatrix(rows, NUMDIMS, sizeof(*cuMatObs), &(matObs[0]), rows, cuMatObs, rows);
 if (stat != CUBLAS_STATUS_SUCCESS) {
     cout << "cuMatObs stat = " << stat << endl;
     printf ("CUBLAS initialization failed\n");
@@ -95,14 +96,14 @@ if (stat != CUBLAS_STATUS_SUCCESS) {
 } // end if (stat != CUBLAS_STATUS_SUCCESS)
 
 // copy matRef to GPU space
-stat = cublasSetMatrix(rows, NUMDIMS, sizeof(*cuMatRef), matRef, rows, cuMatRef, rows);
+stat = cublasSetMatrix(rows, NUMDIMS, sizeof(*cuMatRef), &(matRef[0]), rows, cuMatRef, rows);
 if (stat != CUBLAS_STATUS_SUCCESS) {
     cout << "cuMatRef Stat = " << stat << endl;
     printf ("CUBLAS initialization failed\n");
     return EXIT_FAILURE;
 } // end if (stat != CUBLAS_STATUS_SUCCESS)
 
-stat = cublasSgemm(handle, CUBLAS_OP_T,CUBLAS_OP_N, NUMDIMS, NUMDIMS, rows, &a_i, cuMatObs, rows, cuMatRef, rows, 0, cuB, NUMDIMS);
+stat = cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, NUMDIMS, NUMDIMS, rows, &a_i, cuMatObs, rows, cuMatRef, rows, &beta, cuB, NUMDIMS);
 if (stat != CUBLAS_STATUS_SUCCESS) {
     cout << "cublasSgemm Stat = " << stat << endl;
     printf ("CUBLAS mat mult failed\n");
@@ -120,6 +121,11 @@ if (stat != CUBLAS_STATUS_SUCCESS) {
     printf ("CUBLAS device to host movement failed\n");
     return EXIT_FAILURE;
 } // end if (stat != CUBLAS_STATUS_SUCCESS)
+
+
+for(int i = 0; i <9; i++)
+    cout << B[i] << endl;
+
 free(matObs);
 free(matRef);
 } // int main(int argc, char *argv[])
